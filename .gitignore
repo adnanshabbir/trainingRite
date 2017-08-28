@@ -10,3 +10,7 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 .env
+/TrainingRite-Docs/*
+.DS_Store
+.env.example
+_ide_helper.php
