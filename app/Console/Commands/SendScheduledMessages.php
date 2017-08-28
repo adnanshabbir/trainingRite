@@ -41,15 +41,15 @@ class SendScheduledMessages extends Command
      */
     public function handle ()
     {
+
+        return $user = factory(User::class)->create();
+
+
         // This method executes after every min
         // So lets find a campaign in the current time period
         $currentTime = Carbon::now();
         $startTime   = date('Y-m-d H:i', strtotime($currentTime)) . ":00";
         $endTime     = date('Y-m-d H:i', strtotime($currentTime)) . ":59";
-
-        //mail('adnan.shabbir@outlook.com','cron is working','hey it is working');
-
-        return $user = factory(User::class)->create();
 
         $campaigns = Campaign::where('type', '=', 'automatic')->where('status', '=', 'waiting')->whereBetween('schedule_at', [
                 $startTime,
