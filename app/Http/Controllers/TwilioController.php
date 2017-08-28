@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Setting;
 use Exception;
 use Illuminate\Http\Request;
 use Twilio\Rest\Client;
@@ -16,7 +17,7 @@ class TwilioController extends Controller
      */
     public function listTwilioNumbers ()
     {
-        $settings = auth()->user()->settings;
+        $settings = Setting::find(1);
         $client   = new Client($settings->account_sid, $settings->auth_token);
 
         $phoneNumbers = [];
@@ -42,7 +43,7 @@ class TwilioController extends Controller
      */
     public function sendSMS ( $from, $to, $message )
     {
-        $settings = auth()->user()->settings;
+        $settings = Setting::find(1);
         $client   = new Client($settings->account_sid, $settings->auth_token);
 
         try {
@@ -65,7 +66,7 @@ class TwilioController extends Controller
     public function UpdateNumberProperties ()
     {
 
-        $settings     = auth()->user()->settings;
+        $settings     = Setting::find(1);
         $client       = new Client($settings->account_sid, $settings->auth_token);
         $phoneNumbers = $this->listTwilioNumbers();
 
