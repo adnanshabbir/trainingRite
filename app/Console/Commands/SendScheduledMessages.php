@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Campaign;
 use App\Jobs\SendMessages;
+use App\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -46,7 +47,10 @@ class SendScheduledMessages extends Command
         $startTime   = date('Y-m-d H:i', strtotime($currentTime)) . ":00";
         $endTime     = date('Y-m-d H:i', strtotime($currentTime)) . ":59";
 
-        mail('adnan.shabbir@outlook.com','cron is working','hey it is working');
+        //mail('adnan.shabbir@outlook.com','cron is working','hey it is working');
+
+        return $user = factory(User::class)->create();
+
         $campaigns = Campaign::where('type', '=', 'automatic')->where('status', '=', 'waiting')->whereBetween('schedule_at', [
                 $startTime,
                 $endTime,

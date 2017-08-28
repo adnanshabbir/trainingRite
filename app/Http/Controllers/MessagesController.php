@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Campaign;
 use App\Jobs\SendMessages;
 use App\Message;
+use App\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -43,14 +44,6 @@ class MessagesController extends Controller
      */
     public function create ()
     {
-        //echo $currentTime = Carbon::now();
-        //$startTime   = date('Y-m-d H:i', strtotime($currentTime)) . ":00";
-        //$endTime     = date('Y-m-d H:i', strtotime($currentTime)) . ":59";
-        //
-        //$campaign = Campaign::where('type', '=', 'automatic')
-        //    ->where('status', '=', 'waiting')
-        //    ->whereBetween('schedule_at', [ $startTime, $endTime])->get();
-        //return $campaign;
 
         return view('messages.create_bulk_messages');
     }
