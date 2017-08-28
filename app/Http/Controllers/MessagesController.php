@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Campaign;
+use App\Jobs\SendMessages;
 use App\Message;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -42,6 +43,15 @@ class MessagesController extends Controller
      */
     public function create ()
     {
+        //echo $currentTime = Carbon::now();
+        //$startTime   = date('Y-m-d H:i', strtotime($currentTime)) . ":00";
+        //$endTime     = date('Y-m-d H:i', strtotime($currentTime)) . ":59";
+        //
+        //$campaign = Campaign::where('type', '=', 'automatic')
+        //    ->where('status', '=', 'waiting')
+        //    ->whereBetween('schedule_at', [ $startTime, $endTime])->get();
+        //return $campaign;
+
         return view('messages.create_bulk_messages');
     }
 
@@ -53,20 +63,26 @@ class MessagesController extends Controller
      */
     public function store ( Request $request )
     {
-        dd($request->all());
+
         // validation
         $this->validate($request, [
             'from_numbers'  => 'required',
-            'to_numbers'    => 'required|mimetypes:text/csv,text/plain,text/tsv',
+            'to_numbers'    => 'required|mimetypes:text/csv,text/plain,text/tsv|count_contacts:1000',
             'template_body' => 'required',
         ]);
 
+        $campaignType = ( null === $request->is_schedule ) ? 'manual' : 'automatic';
+        $scheduleAt   = ( null === $request->is_schedule ) ? null : date('Y-m-d H:i:s', strtotime($request->schedule_at));
+
         // first save it as a campaign
-        $campaign           = new Campaign();
-        $campaign->user_id  = auth()->id();
-        $campaign->type     = $request->is_schedule;
-        $campaign->status   = 'waiting';
-        $campaign->dateTime = $request->schedule_at;
+        $campaign              = new Campaign();
+        $campaign->user_id     = auth()->id();
+        $campaign->type        = $campaignType;
+        $campaign->status      = 'waiting';
+        $campaign->schedule_at = $scheduleAt;
+        $campaign->save();
+
+        $campaignId = $campaign->id;
 
         $inserts     = [];
         $contacts    = [];
@@ -108,7 +124,7 @@ class MessagesController extends Controller
         foreach ( $contactsChunks as $key => $value ) {
             foreach ( $value as $index => $item ) :
                 $contacts[ $index ]['user_id']         = auth()->id();
-                $contacts[ $index ]['campaign_id']     = auth()->id();
+                $contacts[ $index ]['campaign_id']     = $campaignId;
                 $contacts[ $index ]['from']            = $fromNumbers[ $key ];
                 $contacts[ $index ]['to']              = $item;
                 $contacts[ $index ]['body']            = $request->template_body;
@@ -127,6 +143,13 @@ class MessagesController extends Controller
             }
         } else {
             Message::insert($contacts);
+        }
+
+        // Send job to queue if its a manual campaign
+        if ( $campaignType == 'manual' ) {
+
+            $job = ( new SendMessages(auth()->id(), $campaignId) )->onQueue('send_messages');
+            dispatch($job);
         }
 
         // set success message

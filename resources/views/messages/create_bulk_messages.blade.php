@@ -193,12 +193,10 @@
 
     <script src="{{asset('assets/js/chosen.jquery.min.js')}}"></script>
 
-    <script src="{{asset('assets/js/bootstrap-datepicker.min.js')}}"></script>
-    <script src="{{asset('assets/js/bootstrap-timepicker.min.js')}}"></script>
     <script src="{{asset('assets/js/moment.min.js')}}"></script>
-    <script src="{{asset('assets/js/daterangepicker.min.js')}}"></script>
+
     <script src="{{asset('assets/js/bootstrap-datetimepicker.min.js')}}"></script>
-    <script src="{{asset('assets/js/bootstrap-colorpicker.min.js')}}"></script>
+
 
 
 
