@@ -68,6 +68,14 @@ class SendMessages implements ShouldQueue
             // send message
             $response = ( new TwilioController () )->sendSMS($message->from, $message->to, $message->body);
 
+            // update counter
+            $messageCounter++;
+
+            if ( $messageCounter == $totalMessages ):
+                // update campaign to completed
+                Campaign::where('id', $this->campaignId)->update([ 'status' => 'completed' ]);
+            endif;
+
             // skip to next if an exception occurred from Twilio
             if ( is_string($response) ) :
                 continue;
@@ -82,13 +90,7 @@ class SendMessages implements ShouldQueue
             // rest for 2 seconds to avoid get flagged
             sleep(2);
 
-            // update counter
-            $messageCounter++;
 
-            if ( $messageCounter == $totalMessages ):
-                // update campaign to completed
-                Campaign::where('id', $this->campaignId)->update([ 'status' => 'completed' ]);
-            endif;
 
         endforeach;
     }
