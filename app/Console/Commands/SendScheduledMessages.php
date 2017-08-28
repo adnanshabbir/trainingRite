@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Campaign;
 use App\Jobs\SendMessages;
-use App\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -42,9 +41,6 @@ class SendScheduledMessages extends Command
     public function handle ()
     {
 
-        return $user = factory(User::class)->create();
-
-
         // This method executes after every min
         // So lets find a campaign in the current time period
         $currentTime = Carbon::now();
@@ -52,9 +48,9 @@ class SendScheduledMessages extends Command
         $endTime     = date('Y-m-d H:i', strtotime($currentTime)) . ":59";
 
         $campaigns = Campaign::where('type', '=', 'automatic')->where('status', '=', 'waiting')->whereBetween('schedule_at', [
-                $startTime,
-                $endTime,
-            ])->get();
+            $startTime,
+            $endTime,
+        ])->get();
 
         // now loop through the campaigns
         foreach ( $campaigns as $campaign ):
