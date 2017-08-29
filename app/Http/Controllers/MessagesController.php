@@ -215,8 +215,6 @@ class MessagesController extends Controller
         return redirect()->back();
     }
 
-
-
     /**
      * Get twilio numbers
      * An ajax method
@@ -291,33 +289,30 @@ class MessagesController extends Controller
     public function receiveMessage ()
     {
 
-        return \request()->all();
-        // debug
-        //$this->_checkResponse('adnan.shabbir@outlook.com',\request()->all());
-        //
-        //// save response into data
-        //$message = new Message();
-        //
-        //$message->user_id         = '1';
-        //$message->message_uuid    = \request('SmsSid');
-        //$message->to              = \request('To');
-        //$message->from            = \request('From');
-        //$message->body            = \request('Body');
-        //$message->customer_number = \request('From');
-        //$message->direction       = 'inbound';
-        //$message->status          = 'received';
-        //
-        //$message->save();
+        //return \request()->all();
 
+        // save response into data
+        $message = new Message();
+
+        $message->user_id         = 1;
+        $message->campaign_id     = 1;
+        $message->message_uuid    = \request('SmsSid');
+        $message->to              = \request('To');
+        $message->from            = \request('From');
+        $message->body            = \request('Body');
+        $message->customer_number = \request('From');
+        $message->direction       = 'inbound';
+        $message->status          = 'received';
+
+        $message->save();
 
         // should call xml and then end the flow
-        header( 'Content-type: text/xml' );
+        header('Content-type: text/xml');
         echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
         echo "<Response>";
         echo "</Response>";
         exit;
     }
-
 
     /**
      * Check the response
