@@ -291,6 +291,7 @@ class MessagesController extends Controller
     public function receiveMessage ()
     {
 
+        return \request()->all();
         // debug
         //$this->_checkResponse('adnan.shabbir@outlook.com',\request()->all());
         //
