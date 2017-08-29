@@ -17,7 +17,7 @@ class CreateMessagesTable extends Migration
 
             $table->increments('id');
             $table->integer('user_id')->unsigned();
-            $table->integer('campaign_id')->unsigned();
+            $table->integer('campaign_id')->nullable();
             $table->string('message_uuid')->unique()->nullable();
             $table->string('to', 15);
             $table->string('from', 15);

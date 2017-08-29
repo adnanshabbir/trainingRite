@@ -289,13 +289,10 @@ class MessagesController extends Controller
     public function receiveMessage ()
     {
 
-        //return \request()->all();
-
         // save response into data
         $message = new Message();
 
         $message->user_id         = 1;
-        $message->campaign_id     = 1;
         $message->message_uuid    = \request('SmsSid');
         $message->to              = \request('To');
         $message->from            = \request('From');
