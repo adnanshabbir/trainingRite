@@ -44,7 +44,6 @@ class MessagesController extends Controller
      */
     public function create ()
     {
-
         return view('messages.create_bulk_messages');
     }
 
@@ -56,13 +55,26 @@ class MessagesController extends Controller
      */
     public function store ( Request $request )
     {
-
         // validation
         $this->validate($request, [
             'from_numbers'  => 'required',
             'to_numbers'    => 'required|mimetypes:text/csv,text/plain,text/tsv|count_contacts:1000',
             'template_body' => 'required',
         ]);
+
+        // explicit check: If From numbers are greater then To numbers then return with error
+        $toNumbersCSVRows = count(file($request->to_numbers, FILE_SKIP_EMPTY_LINES));
+        $fromNumbers      = $request->from_numbers;
+
+        if ( count($fromNumbers) > $toNumbersCSVRows ) {
+
+
+            // set success message
+            $request->session()->flash('alert-danger', 'Error: To numbers must be greater then From numbers');
+
+            // redirect back
+            return redirect()->back();
+        }
 
         $campaignType = ( null === $request->is_schedule ) ? 'manual' : 'automatic';
         $scheduleAt   = ( null === $request->is_schedule ) ? null : date('Y-m-d H:i:s', strtotime($request->schedule_at));
@@ -76,10 +88,8 @@ class MessagesController extends Controller
         $campaign->save();
 
         $campaignId = $campaign->id;
-
-        $inserts     = [];
-        $contacts    = [];
-        $fromNumbers = $request->from_numbers;
+        $inserts    = [];
+        $contacts   = [];
 
         // Fetch CSV
         if ( $request->hasFile('to_numbers') ) {
@@ -99,43 +109,96 @@ class MessagesController extends Controller
                     if ( empty($to) ) {
                         continue;
                     }
-                    $inserts[] = $to;
+                    $contacts[] = $to;
                 endif; // end of fixer
             endforeach;
         }
 
-        // Make the csv chunks on the basis of from numbers
-        if ( count($fromNumbers) > 1 ) {
-            $collection     = collect($inserts);
-            $contactsChunks = $collection->chunk(count($fromNumbers));
-            $contactsChunks = $contactsChunks->toArray();
-        } else {
-            $contactsChunks[] = $inserts;
+        $toNumCount   = count($contacts);
+        $fromNumCount = count($fromNumbers);
+        $reminder     = $toNumCount % $fromNumCount;
+        $perNumText   = ( $toNumCount - $reminder ) / $fromNumCount;
+        $index        = 0;
+
+        //echo 'to numbers counts => ' . $toNumCount;echo "<br/>";
+        //echo 'from numbers counts => ' . $fromNumCount;echo "<br/>";
+        //echo 'Reminder => ' . $reminder;echo "<br/>";
+        //echo 'Per number Text => ' . $perNumText;
+
+        $toNumPartials = array_chunk($contacts, $perNumText);
+        if ( empty($toNumPartials) ) {
+            return null;
         }
 
-        // making batches for insertion
-        foreach ( $contactsChunks as $key => $value ) {
-            foreach ( $value as $index => $item ) :
-                $contacts[ $index ]['user_id']         = auth()->id();
-                $contacts[ $index ]['campaign_id']     = $campaignId;
-                $contacts[ $index ]['from']            = $fromNumbers[ $key ];
-                $contacts[ $index ]['to']              = $item;
-                $contacts[ $index ]['body']            = $request->template_body;
-                $contacts[ $index ]['customer_number'] = $item;
-                $contacts[ $index ]['direction']       = 'outbound';
-                $contacts[ $index ]['status']          = 'pending';
-                $contacts[ $index ]['created_at']      = Carbon::now();
-                $contacts[ $index ]['updated_at']      = Carbon::now();
-            endforeach;
-        }
+        /**
+         * To send bulk messages , we will store the messages in the campaign meta table
+         * because we need to replace the template variables with the real data
+         */
+        foreach ( $toNumPartials as $key => $value ) :
+
+            if ( count($value) != $perNumText ) :
+                continue;
+            endif;
+
+            // setting source number ( from number)
+            if ( isset($fromNumbers[ $key ]) ) :
+                $src = $fromNumbers[ $key ];
+            else:
+                continue;
+            endif;
+
+            // making destination numbers
+            foreach ( $value as $item => $contact ) {
+
+                $inserts[ $index ]['user_id']         = auth()->id();
+                $inserts[ $index ]['campaign_id']     = $campaignId;
+                $inserts[ $index ]['from']            = $src;
+                $inserts[ $index ]['to']              = $contact;
+                $inserts[ $index ]['body']            = $request->template_body;
+                $inserts[ $index ]['customer_number'] = $contact;
+                $inserts[ $index ]['direction']       = 'outbound';
+                $inserts[ $index ]['status']          = 'pending';
+                $inserts[ $index ]['created_at']      = Carbon::now();
+                $inserts[ $index ]['updated_at']      = Carbon::now();
+                $index++;
+            }
+        endforeach;
+
+        /**
+         * If there is a reminder then we will generate another message
+         * add its response to our main response array
+         */
+        if ( $reminder > 0 ) :
+
+            // setting message parameters
+            $lastNumbers = array_slice($contacts, -( $reminder ), $toNumCount, true);
+
+            if ( ! empty($lastNumbers) ) {
+                foreach ( $lastNumbers as $key => $contact ):
+
+                    $sourceNumber                         = $fromNumbers[0];
+                    $inserts[ $index ]['user_id']         = auth()->id();
+                    $inserts[ $index ]['campaign_id']     = $campaignId;
+                    $inserts[ $index ]['from']            = $sourceNumber;
+                    $inserts[ $index ]['to']              = $contact;
+                    $inserts[ $index ]['body']            = $request->template_body;
+                    $inserts[ $index ]['customer_number'] = $contact;
+                    $inserts[ $index ]['direction']       = 'outbound';
+                    $inserts[ $index ]['status']          = 'pending';
+                    $inserts[ $index ]['created_at']      = Carbon::now();
+                    $inserts[ $index ]['updated_at']      = Carbon::now();
+                    $index++;
+                endforeach;
+            }
+        endif;
 
         // making chunks to get saved from prepared statement place holder error
-        if ( count($contacts) > 1000 ) {
-            foreach ( array_chunk($contacts, 1000) as $chunk ) {
-                Message::insert($chunk);
+        if ( count($inserts) > 1000 ) {
+            foreach ( array_chunk($inserts, 1000) as $chunk ) {
+                Message::insert($inserts);
             }
         } else {
-            Message::insert($contacts);
+            Message::insert($inserts);
         }
 
         // Send job to queue if its a manual campaign
@@ -151,6 +214,8 @@ class MessagesController extends Controller
         // redirect back
         return redirect()->back();
     }
+
+
 
     /**
      * Get twilio numbers

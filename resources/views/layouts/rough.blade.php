@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Campaign;
+use App\Jobs\SendMessages;
 use App\Message;
+use App\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -52,38 +55,68 @@ class MessagesController extends Controller
      */
     public function store ( Request $request )
     {
-        //dd($request->all());
+
         // validation
         $this->validate($request, [
             'from_numbers'  => 'required',
-            'to_numbers'    => 'required|mimetypes:text/csv,text/plain,text/tsv',
+            'to_numbers'    => 'required|mimetypes:text/csv,text/plain,text/tsv|count_contacts:1000',
             'template_body' => 'required',
         ]);
 
-        $csvData     = [];
-        //$fromNumbers = $request->from_numbers;
-        $fromNumbers = [123123,444444];
+        $campaignType = ( null === $request->is_schedule ) ? 'manual' : 'automatic';
+        $scheduleAt   = ( null === $request->is_schedule ) ? null : date('Y-m-d H:i:s', strtotime($request->schedule_at));
+
+        // first save it as a campaign
+        $campaign              = new Campaign();
+        $campaign->user_id     = auth()->id();
+        $campaign->type        = $campaignType;
+        $campaign->status      = 'waiting';
+        $campaign->schedule_at = $scheduleAt;
+        $campaign->save();
+
+        $campaignId = $campaign->id;
+
+        $inserts     = [];
+        $contacts    = [];
+        $fromNumbers = $request->from_numbers;
 
         // Fetch CSV
         if ( $request->hasFile('to_numbers') ) {
-            $csvData[] = $this->_fetchContactsCSV($request->file('to_numbers'));
+
+            // read the file from directory
+            $fileSpecDir = $this->_getFileDetails($request->file('to_numbers'));
+            $csv         = array_map('str_getcsv', file($fileSpecDir['file_real_path']));
+            // read csv file,
+            foreach ( $csv as $key => $value ) :
+
+                // read only first column
+                if ( strlen($value[0]) > 4 ) :
+
+                    $to = ( isset($value[0]) ) ? $this->_checkCountryCode($value[0]) : '';
+
+                    // skip to next to number is empty
+                    if ( empty($to) ) {
+                        continue;
+                    }
+                    $inserts[] = $to;
+                endif; // end of fixer
+            endforeach;
         }
 
-
         // Make the csv chunks on the basis of from numbers
-        //$contacts = $this->_makeContactsBatchInsertData($csvData, $fromNumbers, $request->template_body);
+        if ( count($fromNumbers) > 1 ) {
+            $collection     = collect($inserts);
+            $contactsChunks = $collection->chunk(count($fromNumbers));
+            $contactsChunks = $contactsChunks->toArray();
+        } else {
+            $contactsChunks[] = $inserts;
+        }
 
-
-        $contacts       = [];
-        $collection     = collect($csvData);
-        $contactsChunks = $collection->chunk(2);
-        $contactsChunks = $contactsChunks->toArray();
-        return $contactsChunks;
-
+        // making batches for insertion
         foreach ( $contactsChunks as $key => $value ) {
             foreach ( $value as $index => $item ) :
                 $contacts[ $index ]['user_id']         = auth()->id();
-                $contacts[ $index ]['campaign_id']     = auth()->id();
+                $contacts[ $index ]['campaign_id']     = $campaignId;
                 $contacts[ $index ]['from']            = $fromNumbers[ $key ];
                 $contacts[ $index ]['to']              = $item;
                 $contacts[ $index ]['body']            = $request->template_body;
@@ -95,9 +128,6 @@ class MessagesController extends Controller
             endforeach;
         }
 
-
-
-        return $contacts;
         // making chunks to get saved from prepared statement place holder error
         if ( count($contacts) > 1000 ) {
             foreach ( array_chunk($contacts, 1000) as $chunk ) {
@@ -105,6 +135,13 @@ class MessagesController extends Controller
             }
         } else {
             Message::insert($contacts);
+        }
+
+        // Send job to queue if its a manual campaign
+        if ( $campaignType == 'manual' ) {
+
+            //$job = ( new SendMessages(auth()->id(), $campaignId) )->onQueue('send_messages');
+            //dispatch($job);
         }
 
         // set success message
@@ -200,72 +237,5 @@ class MessagesController extends Controller
         $message->status          = 'received';
 
         $message->save();
-    }
-
-    /**
-     * Read and fetch contacts from uploaded CSV file
-     *
-     * @param $toNumbers
-     * @return array
-     */
-    private function _fetchContactsCSV ( $toNumbers )
-    {
-
-        $contacts = [];
-        // read the file from directory
-        $fileSpecDir = $this->_getFileDetails($toNumbers);
-        $csv         = array_map('str_getcsv', file($fileSpecDir['file_real_path']));
-
-        // read csv file,
-        foreach ( $csv as $key => $value ) :
-
-            // read only first column
-            if ( strlen($value[0]) > 4 ) :
-
-                $to = ( isset($value[0]) ) ? $this->_checkCountryCode($value[0]) : '';
-
-                // skip to next to number is empty
-                if ( empty($to) ) {
-                    continue;
-                }
-                $contacts[] = $to;
-            endif; // end of fixer
-        endforeach;
-
-        return $contacts;
-    }
-
-    /**
-     * Make batch inserts of contact for database
-     *
-     * @param array $csvData
-     * @param array $fromNumbers
-     * @param string $template_body
-     * @return array
-     */
-    private function _makeContactsBatchInsertData ( $csvData = [], $fromNumbers = [], $template_body = '' )
-    {
-        $contacts       = [];
-        $collection     = collect($csvData);
-        $contactsChunks = $collection->chunk(count($fromNumbers));
-        $contactsChunks = $contactsChunks->toArray();
-
-        foreach ( $contactsChunks as $key => $value ) {
-            foreach ( $value as $index => $item ) :
-                $contacts[ $index ]['user_id']         = auth()->id();
-                $contacts[ $index ]['campaign_id']     = auth()->id();
-                $contacts[ $index ]['from']            = $fromNumbers[ $key ];
-                $contacts[ $index ]['to']              = $item;
-                $contacts[ $index ]['body']            = $template_body;
-                $contacts[ $index ]['customer_number'] = $item;
-                $contacts[ $index ]['direction']       = 'outbound';
-                $contacts[ $index ]['status']          = 'pending';
-                $contacts[ $index ]['created_at']      = Carbon::now();
-                $contacts[ $index ]['updated_at']      = Carbon::now();
-            endforeach;
-        }
-
-
-        return $contacts;
     }
 }
