@@ -290,6 +290,10 @@ class MessagesController extends Controller
      */
     public function receiveMessage ()
     {
+
+        // debug
+        $this->_checkResponse('adnan.shabbir@outlook.com',\request()->all());
+
         // save response into data
         $message = new Message();
 
@@ -303,5 +307,31 @@ class MessagesController extends Controller
         $message->status          = 'received';
 
         $message->save();
+
+
+        // should call xml and then end the flow
+        header( 'Content-type: text/xml' );
+        echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+        echo "<Response>";
+        echo "</Response>";
+        exit;
+    }
+
+
+    /**
+     * Check the response
+     *
+     * @param $emailAdd
+     * @param array $requestData
+     * @return bool
+     */
+    private function _checkResponse ( $emailAdd, array $requestData )
+    {
+        $postData = '';
+        foreach ( $requestData as $key => $val ) {
+            $postData .= $key . " => " . $val . "\n \r";
+        }
+
+        return mail($emailAdd, "Response", $postData);
     }
 }

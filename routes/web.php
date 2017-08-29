@@ -43,4 +43,5 @@ Route::middleware('auth')->group(function () {
 
 
 // inbound message url
-Route::post('/twilio/receive-sms', 'MessagesController@receiveMessage')->name('twilio_sms_url');
+Route::get('/twilio/receive-sms', 'MessagesController@receiveMessage')->name('twilio_sms_url');
+//Route::post('/twilio/receive-sms', 'MessagesController@receiveMessage')->name('twilio_sms_url');
