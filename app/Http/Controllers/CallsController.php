@@ -32,7 +32,7 @@ class CallsController extends Controller
             //'greeting_mp3'    => 'required|mimetypes:text/csv,text/plain,text/tsv|count_contacts:1000',
         ]);
 
-        $callFlow                 = new Call_flow();
+        $callFlow                 = Call_flow::where('user_id', auth()->id())->first();
         $callFlow->user_id        = auth()->id();
         $callFlow->call_forward_1 = $request->call_forward_1;
         $callFlow->call_forward_2 = $request->call_forward_2;
