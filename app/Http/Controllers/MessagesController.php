@@ -294,7 +294,7 @@ class MessagesController extends Controller
         $message = new Message();
 
         $message->user_id         = '1';
-        $message->message_uuid    = \request('Sid');
+        $message->message_uuid    = \request('SmsSid');
         $message->to              = \request('To');
         $message->from            = \request('From');
         $message->body            = \request('Body');
