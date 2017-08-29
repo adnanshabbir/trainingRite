@@ -69,6 +69,20 @@
 
 
 
+
+    {{--Call flow--}}
+    <li class="{{ (\Request::route()->getName() == 'set_call_flow') ? 'active' : '' }}">
+        <a href="{{route('set_call_flow')}}">
+            <i class="menu-icon fa fa-phone"></i>
+            <span class="menu-text"> Call </span>
+        </a>
+
+        <b class="arrow"></b>
+    </li>
+
+
+
+
     {{--API Settings--}}
     <li class="{{ (\Request::route()->getName() == 'settings') ? 'active' : '' }}">
         <a href="{{route('settings')}}">

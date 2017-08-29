@@ -1,20 +1,17 @@
 @extends('layouts.master')
 
-@section('page-title','Create Bulk Messages')
+@section('page-title','Call Settings')
+
+@section('page_breadcrumb')
+    <li class="active">Call Settings</li>
+@endsection
+
 
 @section('page-plugins-styles')
 
     <!-- page specific plugin styles -->
     <link rel="stylesheet" href="{{asset('assets/css/jquery-ui.custom.min.css')}}"/>
     <link rel="stylesheet" href="{{asset('assets/css/chosen.min.css')}}"/>
-    <link rel="stylesheet" href="{{asset('assets/css/bootstrap-datetimepicker.min.css')}}"/>
-
-
-@endsection
-
-@section('page_breadcrumb')
-
-    <li class="active">Bulk Messages</li>
 @endsection
 
 @section('page-content')
@@ -22,10 +19,10 @@
 
         <div class="page-header">
             <h1>
-                Bulk Messages
+                Call Settings
                 <small>
                     <i class="ace-icon fa fa-angle-double-right"></i>
-                    Upload CSV, chose Twilio numbers and send
+                    Save Outbound Call flow
                 </small>
             </h1>
         </div>
@@ -35,57 +32,94 @@
 
             <div class="col-xs-12">
             @include('layouts.flash_messages')
-
             <!-- PAGE CONTENT BEGINS -->
-                <form action="{{route('send_bulk_messages')}}" class="form-horizontal" role="form" method="post"
-                      enctype="multipart/form-data">
+                <form action="{{route('update_call_flow')}}" class="form-horizontal" role="form" method="post" enctype="multipart/form-data">
 
-                    {{csrf_field()}}
+                {{csrf_field()}}
 
-                    {{--From number--}}
-                    <div class="form-group{{ $errors->has('from_numbers') ? ' has-error' : '' }}">
-                        <label class="col-sm-3 control-label no-padding-right" for="form-field-select-4"> From
-                            Numbers</label>
 
+                    {{--Agent 1--}}
+                    <div class="form-group{{ $errors->has('call_forward_1') ? ' has-error' : '' }}">
+                        <label class="col-sm-4 control-label no-padding-right" for="call_forward_1"> Press 1 to Forward Call to Agent's # </label>
                         <div class="col-xs-5">
-                            <img class="form-control" id="ajax_process" src="{{asset('assets/ajax-loader-1.gif')}}"
-                                 style="display: none">
-                            <select multiple="" class="chosen-select form-control numbers" name="from_numbers[]"
-                                    id="form-field-select-4"
-                                    data-placeholder="Choose Twilio numbers..."
-                                    style="display: none;">
-                            </select>
-                            @if( $errors->has('from_numbers'))
+                            <input type="text" id="call_forward_1" class="col-xs-6 col-sm-6 input-mask-phone"
+                                   name="call_forward_1" value="{{$callFlow->call_forward_1 or old('call_forward_1')}}">
+                            @if( $errors->has('call_forward_1'))
                                 <div class="alert alert-danger col-xs-9">
                                     <button type="button" class="close" data-dismiss="alert">
                                         <i class="ace-icon fa fa-times"></i>
                                     </button>
-                                    {{ $errors->first('from_numbers') }}
+                                    {{ $errors->first('call_forward_1') }}
                                 </div>
                             @endif
                         </div>
+
                     </div>
                     <div class="space-4"></div>
 
 
-                    {{--To Numbers--}}
-                    <div class="form-group{{ $errors->has('to_numbers') ? ' has-error' : '' }}">
-                        <label class="col-sm-3 control-label no-padding-right" for="template_name"> Upload Contacts
-                            CSV</label>
-
-                        <div class="col-sm-5">
-                            <input type="file" id="id-input-file-2" name="to_numbers">
-
-                            @if( $errors->has('to_numbers'))
+                    {{--Agent 2--}}
+                    <div class="form-group{{ $errors->has('call_forward_2') ? ' has-error' : '' }}">
+                        <label class="col-sm-4 control-label no-padding-right" for="call_forward_2"> Press 2 to Forward Call to Agent's #  </label>
+                        <div class="col-xs-5">
+                            <input type="text" id="call_forward_2" class="col-xs-6 col-sm-6 input-mask-phone"
+                                   name="call_forward_2" value="{{$callFlow->call_forward_2 or old('call_forward_2')}}">
+                            @if( $errors->has('call_forward_2'))
                                 <div class="alert alert-danger col-xs-9">
                                     <button type="button" class="close" data-dismiss="alert">
                                         <i class="ace-icon fa fa-times"></i>
                                     </button>
-                                    {{ $errors->first('to_numbers') }}
+                                    {{ $errors->first('call_forward_2') }}
                                 </div>
+                            @endif
+                        </div>
+
+                    </div>
+                    <div class="space-4"></div>
+
+
+                    {{--Agent 3--}}
+                    <div class="form-group{{ $errors->has('call_forward_3') ? ' has-error' : '' }}">
+                        <label class="col-sm-4 control-label no-padding-right" for="call_forward_3"> Press 3 to Forward Call to Agent's #  </label>
+                        <div class="col-xs-5">
+                            <input type="text" id="call_forward_3" class="col-xs-6 col-sm-6 input-mask-phone"
+                                   name="call_forward_3" value="{{$callFlow->call_forward_3 or old('call_forward_3')}}">
+                            @if( $errors->has('call_forward_3'))
+                                <div class="alert alert-danger col-xs-9">
+                                    <button type="button" class="close" data-dismiss="alert">
+                                        <i class="ace-icon fa fa-times"></i>
+                                    </button>
+                                    {{ $errors->first('call_forward_3') }}
+                                </div>
+                            @endif
+                        </div>
+
+                    </div>
+                    <div class="space-4"></div>
+
+
+
+                    {{--Upload Greeting MP3--}}
+                    <div class="form-group{{ $errors->has('greeting_mp3') ? ' has-error' : '' }}">
+                        <label class="col-sm-4 control-label no-padding-right" for="template_name"> Upload Greeting MP3</label>
+
+                        <div class="col-sm-5">
+                            <input type="file" id="id-input-file-2" name="greeting_mp3">
+
+                            @if( $errors->has('greeting_mp3'))
+                                <div class="alert alert-danger col-xs-9">
+                                    <button type="button" class="close" data-dismiss="alert">
+                                        <i class="ace-icon fa fa-times"></i>
+                                    </button>
+                                    {{ $errors->first('greeting_mp3') }}
+                                </div>
+                                @elseif(null !== $callFlow->greeting_mp3)
+                                <label>
+                                    <span class="lbl green">Uploaded: {{$callFlow->greeting_mp3}}</span>
+                                </label>
                             @else
                                 <label>
-                                    <span class="lbl">Only CSV file is allowed</span>
+                                    <span class="lbl">Only MP3 file is allowed</span>
                                 </label>
                             @endif
                         </div>
@@ -93,81 +127,44 @@
                     <div class="space-4"></div>
 
 
-                    <div class="form-group{{ $errors->has('is_schedule') ? ' has-error' : '' }}">
-                        <label class="col-sm-3 control-label no-padding-right" for="scheduling"> Turn Scheduling</label>
 
-                        <div class="col-sm-5">
-                            <label class="col-sm-3 control-label no-padding-right">
+                    {{--From number--}}
+                    <div class="form-group{{ $errors->has('from_number') ? ' has-error' : '' }}">
+                        <label class="col-sm-4 control-label no-padding-right" for="form-field-select-4"> Select a Twilio Number to Make Call</label>
 
-                                <input name="is_schedule" id="scheduling" class="ace ace-switch ace-switch-4 btn-rotate" type="checkbox">
-                                <span class="lbl"></span>
-                            </label>
-                            @if( $errors->has('is_schedule'))
+                        <div class="col-xs-5">
+                            <img class="form-control" id="ajax_process" src="{{asset('assets/ajax-loader-1.gif')}}"
+                                 style="display: none">
+                            <select  class="chosen-select form-control numbers" name="from_number"
+                                    id="form-field-select-4"
+                                    data-placeholder="Choose Twilio numbers..."
+                                    style="display: none;">
+                            </select>
+                            @if( $errors->has('from_number'))
                                 <div class="alert alert-danger col-xs-9">
                                     <button type="button" class="close" data-dismiss="alert">
                                         <i class="ace-icon fa fa-times"></i>
                                     </button>
-                                    {{ $errors->first('is_schedule') }}
-                                </div>
-
-                            @endif
-                        </div>
-                    </div>
-                    <div class="space-4"></div>
-
-
-
-                    {{--Set Scheduale--}}
-                    <div class="form-group{{ $errors->has('schedule_at') ? ' has-error' : '' }}" style="display: none;" id="set_date_time">
-                        <label class="col-sm-3 control-label no-padding-right" for="date-timepicker1"> Set Schedule</label>
-
-                        <div class="col-sm-5">
-                            <input id="date-timepicker1" type="text" class="form-control" name="schedule_at">
-                            <span class="input-group-addon"><i class="fa fa-clock-o bigger-110"></i></span>
-                            @if( $errors->has('schedule_at'))
-                                <div class="alert alert-danger col-xs-9">
-                                    <button type="button" class="close" data-dismiss="alert">
-                                        <i class="ace-icon fa fa-times"></i>
-                                    </button>
-                                    {{ $errors->first('schedule_at') }}
+                                    {{ $errors->first('from_number') }}
                                 </div>
                             @endif
                         </div>
                     </div>
                     <div class="space-4"></div>
 
-
-
-                    {{-- Template Body --}}
-                    <div class="form-group{{ $errors->has('template_body') ? ' has-error' : '' }}">
-                        <label class="col-sm-3 control-label no-padding-right" for="template_body"> Template
-                            Body</label>
-
-                        <div class="col-sm-7">
-                            <textarea class="col-xs-10 col-sm-9" id="template_body" name="template_body"
-                                      placeholder="Template Body Text" rows="8"></textarea>
-                            @if( $errors->has('template_body'))
-                                <div class="alert alert-danger col-xs-9">
-                                    <button type="button" class="close" data-dismiss="alert">
-                                        <i class="ace-icon fa fa-times"></i>
-                                    </button>
-                                    {{ $errors->first('template_body') }}
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="space-4"></div>
-
-
-                    {{--To number--}}
-                    {{--@include('messages.chosen')--}}
 
 
                     <div class="clearfix form-actions">
                         <div class="col-md-offset-3 col-md-9">
                             <button class="btn btn-info" type="submit">
                                 <i class="ace-icon fa fa-check bigger-110"></i>
-                                Send Messages
+                                Update Call Settings
+                            </button>
+
+
+                            <button class="btn btn-success" type="submit">
+                                <i class="ace-icon fa fa-phone bigger-110"></i>
+                                Make Call
                             </button>
                         </div>
                     </div>
@@ -188,12 +185,10 @@
     <script src="{{asset('assets/js/chosen.jquery.min.js')}}"></script>
 
     <script src="{{asset('assets/js/moment.min.js')}}"></script>
-
-    <script src="{{asset('assets/js/bootstrap-datetimepicker.min.js')}}"></script>
+    <script src="{{asset('assets/js/jquery.maskedinput.min.js')}}"></script>
 
 
 @endsection
-
 @section('page-scripts')
 
     <script type="text/javascript">
@@ -215,21 +210,12 @@
                 //
             });
 
-
-            $('#date-timepicker1').datetimepicker().next().on(ace.click_event, function () {
-                $(this).prev().focus();
-            });
+            $.mask.definitions['~']='[+-]';
+            $('.input-mask-phone').mask('(999) 999-9999');
 
 
-            $(":checkbox").click(function(event) {
-                if ($(this).is(":checked"))
-                    $('#set_date_time').show();
-                else
-                    $('#set_date_time').hide();
-            });
 
         });
-
 
         /**
          * Fetch Twilio numbers asynchronously
@@ -271,9 +257,5 @@
 
 
         }
-
     </script>
 @endsection
-
-
-

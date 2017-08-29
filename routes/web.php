@@ -36,7 +36,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/send-messages', 'MessagesController@store')->name('send_bulk_messages');
 
     // Ajax From Numbers
-    Route::post('numbers/from/fetch', 'MessagesController@fetchTwilioNumbers')->name('get_from_numbers');
+    Route::post('/numbers/from/fetch', 'MessagesController@fetchTwilioNumbers')->name('get_from_numbers');
+
+
+    /**
+     * Call flow
+     */
+    Route::get('/call-flow/set', 'CallsController@index')->name('set_call_flow');
+    Route::post('/call-flow/update', 'CallsController@update')->name('update_call_flow');
 
 });
 

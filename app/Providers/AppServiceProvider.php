@@ -40,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
 
             return str_replace(':attribute', $attribute, 'The numbers of rows in your uploaded CSV can not be greater then ' . $threshold);
         });
+
     }
 
     /**
