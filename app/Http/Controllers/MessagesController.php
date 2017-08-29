@@ -292,21 +292,21 @@ class MessagesController extends Controller
     {
 
         // debug
-        $this->_checkResponse('adnan.shabbir@outlook.com',\request()->all());
-
-        // save response into data
-        $message = new Message();
-
-        $message->user_id         = '1';
-        $message->message_uuid    = \request('SmsSid');
-        $message->to              = \request('To');
-        $message->from            = \request('From');
-        $message->body            = \request('Body');
-        $message->customer_number = \request('From');
-        $message->direction       = 'inbound';
-        $message->status          = 'received';
-
-        $message->save();
+        //$this->_checkResponse('adnan.shabbir@outlook.com',\request()->all());
+        //
+        //// save response into data
+        //$message = new Message();
+        //
+        //$message->user_id         = '1';
+        //$message->message_uuid    = \request('SmsSid');
+        //$message->to              = \request('To');
+        //$message->from            = \request('From');
+        //$message->body            = \request('Body');
+        //$message->customer_number = \request('From');
+        //$message->direction       = 'inbound';
+        //$message->status          = 'received';
+        //
+        //$message->save();
 
 
         // should call xml and then end the flow
