@@ -13,6 +13,5 @@ class VerifyCsrfToken extends BaseVerifier
      */
     protected $except = [
         '/twilio/receive-sms',
-        'twilio/receive-sms',
     ];
 }
