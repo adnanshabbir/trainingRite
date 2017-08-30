@@ -33,7 +33,9 @@
             <div class="col-xs-12">
             @include('layouts.flash_messages')
             <!-- PAGE CONTENT BEGINS -->
-                <form action="{{route('update_call_flow')}}" class="form-horizontal" role="form" method="post" enctype="multipart/form-data">
+
+
+                <form action="{{route('update_call_flow')}}" enctype="multipart/form-data" class="form-horizontal" method="post">
 
                 {{csrf_field()}}
 
@@ -98,7 +100,6 @@
                     <div class="space-4"></div>
 
 
-
                     {{--Upload Greeting MP3--}}
                     <div class="form-group{{ $errors->has('greeting_mp3') ? ' has-error' : '' }}">
                         <label class="col-sm-4 control-label no-padding-right" for="template_name"> Upload Greeting MP3</label>
@@ -114,9 +115,10 @@
                                     {{ $errors->first('greeting_mp3') }}
                                 </div>
                                 @elseif(null !== $callFlow->greeting_mp3)
-                                <label>
-                                    <span class="lbl green">Uploaded: {{$callFlow->greeting_mp3}}</span>
-                                </label>
+                                <audio controls>
+                                    <source src="{{asset('storage/greetings/'.$callFlow->greeting_mp3)}}" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio>
                             @else
                                 <label>
                                     <span class="lbl">Only MP3 file is allowed</span>
@@ -127,33 +129,6 @@
                     <div class="space-4"></div>
 
 
-
-                    {{--From number--}}
-                    <div class="form-group{{ $errors->has('from_number') ? ' has-error' : '' }}">
-                        <label class="col-sm-4 control-label no-padding-right" for="form-field-select-4"> Select a Twilio Number to Make Call</label>
-
-                        <div class="col-xs-5">
-                            <img class="form-control" id="ajax_process" src="{{asset('assets/ajax-loader-1.gif')}}"
-                                 style="display: none">
-                            <select  class="chosen-select form-control numbers" name="from_number"
-                                    id="form-field-select-4"
-                                    data-placeholder="Choose Twilio numbers..."
-                                    style="display: none;">
-                            </select>
-                            @if( $errors->has('from_number'))
-                                <div class="alert alert-danger col-xs-9">
-                                    <button type="button" class="close" data-dismiss="alert">
-                                        <i class="ace-icon fa fa-times"></i>
-                                    </button>
-                                    {{ $errors->first('from_number') }}
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="space-4"></div>
-
-
-
                     <div class="clearfix form-actions">
                         <div class="col-md-offset-3 col-md-9">
                             <button class="btn btn-info" type="submit">
@@ -161,15 +136,13 @@
                                 Update Call Settings
                             </button>
 
-
-                            <button class="btn btn-success" type="submit">
-                                <i class="ace-icon fa fa-phone bigger-110"></i>
-                                Make Call
-                            </button>
                         </div>
                     </div>
 
                 </form>
+
+                @include('calls.create_outbound_call')
+
 
                 <!-- PAGE CONTENT ENDS -->
             </div>
@@ -204,7 +177,7 @@
                 droppable: false,
                 onchange: null,
                 thumbnail: false, //| true | large
-                whitelist: 'csv'
+//                whitelist: 'csv'
                 //blacklist:'exe|php'
                 //onchange:''
                 //

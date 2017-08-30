@@ -25,11 +25,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', 'SettingsController@show')->name('settings');
     Route::post('/settings', 'SettingsController@update')->name('update_settings');
 
-
     // Message Logs
     Route::get('/message-logs/inbound', 'MessagesController@indexInboundMessageLogs')->name('inbound_logs');
     Route::get('/message-logs/outbound', 'MessagesController@indexOutboundMessageLogs')->name('outbound_logs');
-
 
     // Send Bulk Messages
     Route::get('/send-messages', 'MessagesController@create')->name('create_bulk_messages');
@@ -38,14 +36,23 @@ Route::middleware('auth')->group(function () {
     // Ajax From Numbers
     Route::post('/numbers/from/fetch', 'MessagesController@fetchTwilioNumbers')->name('get_from_numbers');
 
-
     /**
      * Call flow
      */
     Route::get('/call-flow/set', 'CallsController@index')->name('set_call_flow');
     Route::post('/call-flow/update', 'CallsController@update')->name('update_call_flow');
-
+    Route::post('/call-flow/create', 'CallsController@create')->name('create_outbound_call');
 });
 
-// inbound message url
+// Inbound Message URL
 Route::post('/twilio/receive-sms', 'MessagesController@receiveMessage')->name('twilio_sms_url');
+
+// Outbound REST API Call Answer URL
+Route::post('/twilio/outbound-call/answer', 'CallsController@outboundCallAnswerURL')->name('twilio_outbound_call_url');
+
+// Gather Action URL
+Route::post('/twilio/outbound-call/answer', 'CallsController@gatherActionURL')->name('twilio_outbound_gather_action_url');
+
+Route::post('/twilio/outbound-call/dial/action-url', 'CallsController@dialActionURL')->name('twilio_outbound_dial_action_url');
+
+//Route::get('foo','CallsController@outboundCallAnswerURL');

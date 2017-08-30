@@ -80,4 +80,29 @@ class TwilioController extends Controller
             return $e->getMessage();
         }
     }
+
+    /**
+     * Make outbound call using Twilio rest api
+     *
+     * @param string $from
+     * @param string $to
+     * @param string $url
+     * @return array|string
+     */
+    public function makeOutboundCall ( $from, $to, $url )
+    {
+
+        $settings = Setting::find(1);
+        $client   = new Client($settings->account_sid, $settings->auth_token);
+        try {
+            // Initiate a new outbound call
+            $call = $client->account->calls->create($to, $from, [
+                "url" => $url,
+            ]);
+
+            return $call;
+        } catch ( Exception $e ) {
+            return $e->getMessage();
+        }
+    }
 }

@@ -1,8 +1,8 @@
 <div class="footer-inner">
     <div class="footer-content">
-        <a href="http://cruisebrains.com">
+        <a href="#">
             <span class="bigger-120">
-                <span class="blue bolder">Cruise Brains</span> Application &copy; 2017
+                <span class="blue bolder">Training Rite</span> Application &copy; 2017
             </span>
         </a>
     </div>
