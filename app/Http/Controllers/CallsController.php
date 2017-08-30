@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Call;
 use App\Call_flow;
+use App\Jobs\InitiateOutboundCalls;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Twilio\Twiml;
@@ -112,6 +113,10 @@ class CallsController extends Controller
 
             endforeach;
         }
+
+        // push to job
+        $job = ( new InitiateOutboundCalls(auth()->id()) )->onQueue('outbound_calls');
+        dispatch($job);
 
         // set success message
         $request->session()->flash('alert-success', 'Success: Initiate outbound call has been initiated');
