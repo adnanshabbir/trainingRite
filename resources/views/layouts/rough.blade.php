@@ -1,241 +1,35 @@
-<?php
-
-namespace App\Http\Controllers;
-
-use App\Campaign;
-use App\Jobs\SendMessages;
-use App\Message;
-use App\User;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-
-class MessagesController extends Controller
-{
-    /**
-     * Display a listing of the inbound message logs resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function indexInboundMessageLogs ()
-    {
-        $inboundMessageLogs = Message::where('direction', 'inbound')->latest()->get();
-        $counter            = 0;
-
-        return view('messages.inbound_logs', compact('inboundMessageLogs', 'counter'));
-    }
-
-    /**
-     * Display a listing of the outbound message logs resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function indexOutboundMessageLogs ()
-    {
-        $outboundMessageLogs = Message::where('direction', 'outbound')->latest()->get();
-        $counter             = 0;
-
-        return view('messages.outbound_logs', compact('outboundMessageLogs', 'counter'));
-    }
-
-    /**
-     * Show the form for creating a new bulk messages campaign resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create ()
-    {
-        return view('messages.create_bulk_messages');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store ( Request $request )
-    {
-
-        // validation
-        $this->validate($request, [
-            'from_numbers'  => 'required',
-            'to_numbers'    => 'required|mimetypes:text/csv,text/plain,text/tsv|count_contacts:1000',
-            'template_body' => 'required',
-        ]);
-
-        $campaignType = ( null === $request->is_schedule ) ? 'manual' : 'automatic';
-        $scheduleAt   = ( null === $request->is_schedule ) ? null : date('Y-m-d H:i:s', strtotime($request->schedule_at));
-
-        // first save it as a campaign
-        $campaign              = new Campaign();
-        $campaign->user_id     = auth()->id();
-        $campaign->type        = $campaignType;
-        $campaign->status      = 'waiting';
-        $campaign->schedule_at = $scheduleAt;
-        $campaign->save();
-
-        $campaignId = $campaign->id;
-
-        $inserts     = [];
-        $contacts    = [];
-        $fromNumbers = $request->from_numbers;
-
-        // Fetch CSV
-        if ( $request->hasFile('to_numbers') ) {
-
-            // read the file from directory
-            $fileSpecDir = $this->_getFileDetails($request->file('to_numbers'));
-            $csv         = array_map('str_getcsv', file($fileSpecDir['file_real_path']));
-            // read csv file,
-            foreach ( $csv as $key => $value ) :
-
-                // read only first column
-                if ( strlen($value[0]) > 4 ) :
-
-                    $to = ( isset($value[0]) ) ? $this->_checkCountryCode($value[0]) : '';
-
-                    // skip to next to number is empty
-                    if ( empty($to) ) {
-                        continue;
-                    }
-                    $inserts[] = $to;
-                endif; // end of fixer
-            endforeach;
-        }
-
-        // Make the csv chunks on the basis of from numbers
-        if ( count($fromNumbers) > 1 ) {
-            $collection     = collect($inserts);
-            $contactsChunks = $collection->chunk(count($fromNumbers));
-            $contactsChunks = $contactsChunks->toArray();
-        } else {
-            $contactsChunks[] = $inserts;
-        }
-
-        // making batches for insertion
-        foreach ( $contactsChunks as $key => $value ) {
-            foreach ( $value as $index => $item ) :
-                $contacts[ $index ]['user_id']         = auth()->id();
-                $contacts[ $index ]['campaign_id']     = $campaignId;
-                $contacts[ $index ]['from']            = $fromNumbers[ $key ];
-                $contacts[ $index ]['to']              = $item;
-                $contacts[ $index ]['body']            = $request->template_body;
-                $contacts[ $index ]['customer_number'] = $item;
-                $contacts[ $index ]['direction']       = 'outbound';
-                $contacts[ $index ]['status']          = 'pending';
-                $contacts[ $index ]['created_at']      = Carbon::now();
-                $contacts[ $index ]['updated_at']      = Carbon::now();
-            endforeach;
-        }
-
-        // making chunks to get saved from prepared statement place holder error
-        if ( count($contacts) > 1000 ) {
-            foreach ( array_chunk($contacts, 1000) as $chunk ) {
-                Message::insert($chunk);
-            }
-        } else {
-            Message::insert($contacts);
-        }
-
-        // Send job to queue if its a manual campaign
-        if ( $campaignType == 'manual' ) {
-
-            //$job = ( new SendMessages(auth()->id(), $campaignId) )->onQueue('send_messages');
-            //dispatch($job);
-        }
-
-        // set success message
-        $request->session()->flash('alert-success', 'Success: Messages have been sent for processing successfully');
-
-        // redirect back
-        return redirect()->back();
-    }
-
-    /**
-     * Get twilio numbers
-     * An ajax method
-     *
-     * @return array
-     */
-    public function fetchTwilioNumbers ()
-    {
-
-        $twilioNumbers = ( new TwilioController )->listTwilioNumbers();
-        $html          = '';
-
-        foreach ( $twilioNumbers as $key => $value ) {
-
-            $html .= '<option value="' . $value['phone_number'] . '">' . $value['phone_number'] . '</option>';
-        }
-        echo $html;
-        exit;
-    }
-
-    /**
-     * Get uploaded file details
-     *
-     * @param $file
-     * @return array
-     */
-    private function _getFileDetails ( $file )
-    {
-        $file_details = [];
-        //Display File Name
-        $file_details['file_name'] = $file->getClientOriginalName();
-
-        //Display File Extension
-        $file_details['file_ext'] = $file->getClientOriginalExtension();
-
-        //Display File Real Path
-        $file_details['file_real_path'] = $file->getRealPath();
-
-        return $file_details;
-    }
-
-    /**
-     * Apply country code logic as per user selection and return number
-     *
-     * @param $phone
-     * @return string
-     */
-    private function _checkCountryCode ( $phone )
-    {
-        $phone = str_replace(" ", "", $phone);
-        $phone = str_replace("-", "", $phone);
-        $phone = str_replace(")", "", $phone);
-        $phone = str_replace("(", "", $phone);
-
-        if ( strlen($phone) == 10 ) {
-            // add the user choice
-            return $phoneNumber = '+1' . $phone;
-        }
-
-        if ( strlen($phone) == 11 ) {
-            // add the user choice
-            return $phoneNumber = '+' . $phone;
-        }
-
-        // do nothing just return the number
-        return $phone;
-    }
-
-    /**
-     * Inbound sms url
-     */
-    public function receiveMessage ()
-    {
-        // save response into data
-        $message = new Message();
-
-        $message->user_id         = '1';
-        $message->message_uuid    = \request('Sid');
-        $message->to              = \request('To');
-        $message->from            = \request('From');
-        $message->body            = \request('Body');
-        $message->customer_number = \request('From');
-        $message->direction       = 'inbound';
-        $message->status          = 'received';
-
-        $message->save();
-    }
-}
+exception 'InvalidArgumentException' with message 'Route [twilio_outbound_call_url] not defined.'
+in /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Routing/UrlGenerator.php:304
+Stack trace:
+#0 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Foundation/helpers.php(709): Illuminate\Routing\UrlGenerator->route('twilio_outbound...', Array, true)
+#1 /Applications/MAMP/htdocs/TrainingRite/app/Jobs/InitiateOutboundCalls.php(53): route('twilio_outbound...')
+#2 [internal function]: App\Jobs\InitiateOutboundCalls->handle()
+#3 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(30): call_user_func_array(Array, Array)
+#4 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(87): Illuminate\Container\BoundMethod::Illuminate\Container\{closure}()
+#5 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(31): Illuminate\Container\BoundMethod::callBoundMethod(Object(Illuminate\Foundation\Application), Array, Object(Closure))
+#6 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Container/Container.php(539): Illuminate\Container\BoundMethod::call(Object(Illuminate\Foundation\Application), Array, Array, NULL)
+#7 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Bus/Dispatcher.php(94): Illuminate\Container\Container->call(Array)
+#8 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(114): Illuminate\Bus\Dispatcher->Illuminate\Bus\{closure}(Object(App\Jobs\InitiateOutboundCalls))
+#9 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(102): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}(Object(App\Jobs\InitiateOutboundCalls))
+#10 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Bus/Dispatcher.php(98): Illuminate\Pipeline\Pipeline->then(Object(Closure))
+#11 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Queue/CallQueuedHandler.php(43): Illuminate\Bus\Dispatcher->dispatchNow(Object(App\Jobs\InitiateOutboundCalls), NULL)
+#12 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Queue/Jobs/Job.php(69): Illuminate\Queue\CallQueuedHandler->call(Object(Illuminate\Queue\Jobs\DatabaseJob), Array)
+#13 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Queue/Worker.php(317): Illuminate\Queue\Jobs\Job->fire()
+#14 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Queue/Worker.php(267): Illuminate\Queue\Worker->process('database', Object(Illuminate\Queue\Jobs\DatabaseJob), Object(Illuminate\Queue\WorkerOptions))
+#15 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Queue/Worker.php(224): Illuminate\Queue\Worker->runJob(Object(Illuminate\Queue\Jobs\DatabaseJob), 'database', Object(Illuminate\Queue\WorkerOptions))
+#16 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Queue/Console/WorkCommand.php(102): Illuminate\Queue\Worker->runNextJob('database', 'outbound_calls', Object(Illuminate\Queue\WorkerOptions))
+#17 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Queue/Console/WorkCommand.php(86): Illuminate\Queue\Console\WorkCommand->runWorker('database', 'outbound_calls')
+#18 [internal function]: Illuminate\Queue\Console\WorkCommand->fire()
+#19 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(30): call_user_func_array(Array, Array)
+#20 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(87): Illuminate\Container\BoundMethod::Illuminate\Container\{closure}()
+#21 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(31): Illuminate\Container\BoundMethod::callBoundMethod(Object(Illuminate\Foundation\Application), Array, Object(Closure))
+#22 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Container/Container.php(539): Illuminate\Container\BoundMethod::call(Object(Illuminate\Foundation\Application), Array, Array, NULL)
+#23 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Illuminate\Container\Container->call(Array)
+#24 /Applications/MAMP/htdocs/TrainingRite/vendor/symfony/console/Command/Command.php(264): Illuminate\Console\Command->execute(Object(Symfony\Component\Console\Input\ArgvInput), Object(Illuminate\Console\OutputStyle))
+#25 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Console/Command.php(168): Symfony\Component\Console\Command\Command->run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Illuminate\Console\OutputStyle))
+#26 /Applications/MAMP/htdocs/TrainingRite/vendor/symfony/console/Application.php(874): Illuminate\Console\Command->run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#27 /Applications/MAMP/htdocs/TrainingRite/vendor/symfony/console/Application.php(228): Symfony\Component\Console\Application->doRunCommand(Object(Illuminate\Queue\Console\WorkCommand), Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#28 /Applications/MAMP/htdocs/TrainingRite/vendor/symfony/console/Application.php(130): Symfony\Component\Console\Application->doRun(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#29 /Applications/MAMP/htdocs/TrainingRite/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(122): Symfony\Component\Console\Application->run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#30 /Applications/MAMP/htdocs/TrainingRite/artisan(36): Illuminate\Foundation\Console\Kernel->handle(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#31 {main}

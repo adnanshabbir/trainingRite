@@ -51,7 +51,7 @@ Route::post('/twilio/receive-sms', 'MessagesController@receiveMessage')->name('t
 Route::post('/twilio/outbound-call/answer', 'CallsController@outboundCallAnswerURL')->name('twilio_outbound_call_url');
 
 // Gather Action URL
-Route::post('/twilio/outbound-call/answer', 'CallsController@gatherActionURL')->name('twilio_outbound_gather_action_url');
+Route::post('/twilio/outbound-call/gather/answer', 'CallsController@gatherActionURL')->name('twilio_outbound_gather_action_url');
 
 Route::post('/twilio/outbound-call/dial/action-url', 'CallsController@dialActionURL')->name('twilio_outbound_dial_action_url');
 
