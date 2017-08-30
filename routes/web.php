@@ -55,4 +55,4 @@ Route::post('/twilio/outbound-call/gather/answer', 'CallsController@gatherAction
 
 Route::post('/twilio/outbound-call/dial/action-url', 'CallsController@dialActionURL')->name('twilio_outbound_dial_action_url');
 
-//Route::get('foo','CallsController@outboundCallAnswerURL');
+//Route::get('foo','CallsController@dialActionURL');

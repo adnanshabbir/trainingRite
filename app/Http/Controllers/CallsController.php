@@ -187,6 +187,7 @@ class CallsController extends Controller
         $gather->say('Please press 3 or say sales for sales.');
 
         echo $response;
+        exit;
     }
 
     /**
@@ -198,7 +199,6 @@ class CallsController extends Controller
     {
 
         $callFlow  = Call_flow::first();
-        //$digits    = \response('Digits');
         $digits    = $_REQUEST['Digits'];
         $response  = new Twiml();
         $actionURL = route('twilio_outbound_dial_action_url');
@@ -214,6 +214,7 @@ class CallsController extends Controller
         }
 
         echo $response;
+        exit;
     }
 
     /**
@@ -224,10 +225,10 @@ class CallsController extends Controller
     public function dialActionURL ()
     {
 
-        $callSid          = \response('CallSid');
-        $dialCallSid      = \response('DialCallSid');
-        $callStatus       = \response('CallStatus');
-        $dialCallDuration = \response('DialCallDuration');
+        $callSid          = $_REQUEST['CallSid'];
+        $dialCallSid      = $_REQUEST['DialCallSid'];
+        $callStatus       = $_REQUEST['CallStatus'];
+        $dialCallDuration = $_REQUEST['DialCallDuration'];
 
         // update database
         $call                = Call::where('call_sid', '=', $callSid)->first();
@@ -238,5 +239,6 @@ class CallsController extends Controller
 
         $response = new Twiml();
         echo $response;
+        exit;
     }
 }
