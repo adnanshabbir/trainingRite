@@ -198,7 +198,8 @@ class CallsController extends Controller
     {
 
         $callFlow  = Call_flow::first();
-        $digits    = \response('Digits');
+        //$digits    = \response('Digits');
+        $digits    = $_REQUEST['Digits'];
         $response  = new Twiml();
         $actionURL = route('twilio_outbound_dial_action_url');
 

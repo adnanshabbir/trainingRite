@@ -53,7 +53,7 @@ class InitiateOutboundCalls implements ShouldQueue
             $url        = route('twilio_outbound_call_url');
 
             $response   = ( new TwilioController )->makeOutboundCall($call->from, $call->to, $url);
-            
+
             if ( is_string($response) ) :
 
                 $updateCall->status = 'failed';
