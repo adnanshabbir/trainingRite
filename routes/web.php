@@ -1,5 +1,4 @@
 <?php
-
 // Front page
 Route::get('/', function () {
     return redirect('login');
@@ -42,6 +41,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/call-flow/set', 'CallsController@index')->name('set_call_flow');
     Route::post('/call-flow/update', 'CallsController@update')->name('update_call_flow');
     Route::post('/call-flow/create', 'CallsController@create')->name('create_outbound_call');
+
+    /**
+     * Calls logs
+     */
+    Route::get('call-logs/inbound', 'CallsController@indexInboundCallsLogs')->name('inbound_calls_logs');
+    Route::get('call-logs/outbound', 'CallsController@indexOutboundCallsLogs')->name('outbound_calls_logs');
 });
 
 // Inbound Message URL
@@ -54,5 +59,3 @@ Route::post('/twilio/outbound-call/answer', 'CallsController@outboundCallAnswerU
 Route::post('/twilio/outbound-call/gather/answer', 'CallsController@gatherActionURL')->name('twilio_outbound_gather_action_url');
 
 Route::post('/twilio/outbound-call/dial/action-url', 'CallsController@dialActionURL')->name('twilio_outbound_dial_action_url');
-
-//Route::get('foo','CallsController@dialActionURL');

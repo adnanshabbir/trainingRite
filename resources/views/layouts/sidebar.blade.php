@@ -67,9 +67,6 @@
 
 
 
-
-
-
     {{--Call flow--}}
     <li class="{{ (\Request::route()->getName() == 'set_call_flow') ? 'active' : '' }}">
         <a href="{{route('set_call_flow')}}">
@@ -79,6 +76,43 @@
 
         <b class="arrow"></b>
     </li>
+
+
+
+    {{--Cals Logs--}}
+    <?php $callsLogs = [ 'inbound_calls_logs', 'outbound_calls_logs' ];?>
+    <li @if(in_array( \Request::route()->getName(), $callsLogs)) class="active open" @endif>
+        {{--<li class="active open">--}}
+        <a href="#" class="dropdown-toggle">
+            <i class="menu-icon fa fa-cloud"></i>
+            <span class="menu-text">Calls Logs</span>
+            <b class="arrow fa fa-angle-down"></b>
+        </a>
+        <b class="arrow"></b>
+
+        <ul class="submenu">
+
+            {{--Inbound Logs--}}
+            <li class="{{ (\Request::route()->getName() == 'inbound_calls_logs') ? 'active' : '' }}">
+                <a href="{{route('inbound_calls_logs')}}">
+                    <i class="menu-icon fa fa-caret-right"></i>
+                    Inbound
+                </a>
+                <b class="arrow"></b>
+            </li>
+
+
+            {{--Outbound Logs--}}
+            <li class="{{ (\Request::route()->getName() == 'outbound_calls_logs') ? 'active' : '' }}">
+                <a href="{{route('outbound_calls_logs')}}">
+                    <i class="menu-icon fa fa-caret-right"></i>
+                    Outbound
+                </a>
+                <b class="arrow"></b>
+            </li>
+        </ul>
+    </li>
+
 
 
 

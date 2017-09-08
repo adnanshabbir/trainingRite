@@ -1,0 +1,3 @@
+"Call SID","To Number","From Number",Direction,"Call Duration",Status,TimeStamp
+CA498cc6e10cf450152b82d5d1e13eb989,+12053155805,+14243777587,outbound,,failed,"2017-08-30 14:59:42"
+,+12053155805,+14243777587,outbound,,waiting,"2017-08-30 15:01:54"

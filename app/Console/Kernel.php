@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Console\Commands\SendScheduledMessages;
+use App\Mail\DailyCallsLogs;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -26,6 +27,13 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command(SendScheduledMessages::class)->everyMinute();
+
+        // Send daily Calls logs
+        $schedule->call(function () {
+            \Mail::to('adnan.shabbir@outlook.com')->send(new DailyCallsLogs);
+        })->everyMinute();
+
+
     }
 
     /**

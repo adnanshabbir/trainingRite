@@ -228,17 +228,44 @@ class CallsController extends Controller
         $callSid          = $_REQUEST['CallSid'];
         $dialCallSid      = $_REQUEST['DialCallSid'];
         $callStatus       = $_REQUEST['CallStatus'];
+        $dialCallStatus   = $_REQUEST['DialCallStatus'];
         $dialCallDuration = $_REQUEST['DialCallDuration'];
 
         // update database
         $call                = Call::where('call_sid', '=', $callSid)->first();
         $call->user_id       = '1';
         $call->call_duration = $dialCallDuration;
-        $call->status        = $callStatus;
+        $call->status        = $dialCallStatus;
         $call->save();
 
         $response = new Twiml();
         echo $response;
         exit;
+    }
+
+    /**
+     * Display a listing of the inbound calls logs resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function indexInboundCallsLogs ()
+    {
+        $inboundCallsLogs = Call::where('direction', '=', 'inbound')->latest()->get();
+        $counter          = 0;
+
+        return view('calls.inbound_logs', compact('inboundCallsLogs', 'counter'));
+    }
+
+    /**
+     * Display a listing of the outbound calls logs resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function indexOutboundCallsLogs ()
+    {
+        $outboundCallsLogs = Call::where('direction', '=', 'outbound')->latest()->get();
+        $counter           = 0;
+
+        return view('calls.outbound_logs', compact('outboundCallsLogs', 'counter'));
     }
 }
