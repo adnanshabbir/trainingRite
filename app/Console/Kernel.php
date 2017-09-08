@@ -31,7 +31,7 @@ class Kernel extends ConsoleKernel
         // Send daily Calls logs
         $schedule->call(function () {
             \Mail::to('adnan.shabbir@outlook.com')->send(new DailyCallsLogs);
-        })->everyMinute();
+        })->daily();
 
 
     }
