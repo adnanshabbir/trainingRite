@@ -64,10 +64,10 @@ Route::post('/twilio/outbound-call/dial/action-url', 'CallsController@dialAction
 
 
 Route::get('/test', function (){
-    \Mail::to('adnan.shabbir@outlook.com')->send(new DailyCallsLogs);
+    \Mail::to('adnan.shabbir@icloud.com')->send(new DailyCallsLogs);
 });
 
 
 Route::get('/basic', function (){
-    mail('adnan.shabbir@outlook.com','test','testing php mailer');
+    mail('adnan.shabbir@icloud.com','test','testing php mailer');
 });
