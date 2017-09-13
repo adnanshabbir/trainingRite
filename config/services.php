@@ -15,10 +15,8 @@ return [
     */
 
     'mailgun' => [
-        //'domain' => env('MAILGUN_DOMAIN'),
-        //'secret' => env('MAILGUN_SECRET'),
-        'domain' => 'sandbox295ddc176f2e4b41a2572f03f41ae2ed.mailgun.org',
-        'secret' => 'key-e2cfcb9d1e386dd64d6dc90547aba8ef',
+        'domain' => env('MAILGUN_DOMAIN'),
+        'secret' => env('MAILGUN_SECRET'),
     ],
 
     'ses' => [
