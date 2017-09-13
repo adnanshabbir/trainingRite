@@ -1,5 +1,7 @@
 <?php
 // Front page
+use App\Mail\DailyCallsLogs;
+
 Route::get('/', function () {
     return redirect('login');
 });
@@ -59,3 +61,8 @@ Route::post('/twilio/outbound-call/answer', 'CallsController@outboundCallAnswerU
 Route::post('/twilio/outbound-call/gather/answer', 'CallsController@gatherActionURL')->name('twilio_outbound_gather_action_url');
 
 Route::post('/twilio/outbound-call/dial/action-url', 'CallsController@dialActionURL')->name('twilio_outbound_dial_action_url');
+
+
+Route::get('/test', function (){
+    \Mail::to('adnan.shabbir@outlook.com')->send(new DailyCallsLogs);
+});
