@@ -62,12 +62,26 @@ Route::post('/twilio/outbound-call/gather/answer', 'CallsController@gatherAction
 
 Route::post('/twilio/outbound-call/dial/action-url', 'CallsController@dialActionURL')->name('twilio_outbound_dial_action_url');
 
+Route::get('/test', function () {
+    \Mail::to('adnan.shabbir@icloud.com')->send(new DailyCallsLogs);
 
-Route::get('/test', function (){
     \Mail::to('adnan.shabbir@icloud.com')->send(new DailyCallsLogs);
 });
 
+Route::get('/basic', function () {
+    //mail('adnan.shabbir@icloud.com','test','testing php mailer');
+    //
+    //Mail::send('emails.reminder', ['user' => $user], function ($m) use ($user) {
+    //    $m->from('hello@app.com', 'Your Application');
+    //
+    //    $m->to($user->email, $user->name)->subject('Your Reminder!');
+    //});
+    //
 
-Route::get('/basic', function (){
-    mail('adnan.shabbir@icloud.com','test','testing php mailer');
+    $title   = 'Test email';
+    $content = 'testing email from php mail';
+    Mail::send('emails.reports.test', [ 'title' => $title, 'content' => $content ], function ( $message ) {
+        $message->from('adnan.shabbir@outlook.com', 'Adnan Shabbir Rao');
+        $message->to('adnan.shabbir@icloud.com');
+    });
 });
