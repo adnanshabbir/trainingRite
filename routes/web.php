@@ -69,15 +69,6 @@ Route::get('/test', function () {
 });
 
 Route::get('/basic', function () {
-    //mail('adnan.shabbir@icloud.com','test','testing php mailer');
-    //
-    //Mail::send('emails.reminder', ['user' => $user], function ($m) use ($user) {
-    //    $m->from('hello@app.com', 'Your Application');
-    //
-    //    $m->to($user->email, $user->name)->subject('Your Reminder!');
-    //});
-    //
-
     $title   = 'Test email';
     $content = 'testing email from php mail';
     Mail::send('emails.reports.test', [ 'title' => $title, 'content' => $content ], function ( $message ) {
